@@ -72,12 +72,16 @@ namespace Certify
             var privateKeyPEM = ConvertToPEM(privateKeyBase64);
 
             // construct the request for the template name specified
-            var objPkcs10 = new CX509CertificateRequestPkcs10();
+            IX509CertificateRequestPkcs10V3 objPkcs10 = (IX509CertificateRequestPkcs10V3)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509CertificateRequestPkcs10"));
             var context = machineContext
                 ? X509CertificateEnrollmentContext.ContextMachine
                 : X509CertificateEnrollmentContext.ContextUser;
 
-            objPkcs10.InitializeFromPrivateKey(context, privateKey, templateName);
+            objPkcs10.InitializeFromPrivateKey(context, privateKey, "");
+
+            CX509ExtensionTemplateName objExtensionTemplate = new CX509ExtensionTemplateName();
+            objExtensionTemplate.InitializeEncode(templateName);
+            objPkcs10.X509Extensions.Add((CX509Extension)objExtensionTemplate);
 
             var objDN = new CX500DistinguishedName();
 
@@ -116,7 +120,6 @@ namespace Certify
             var objEnroll = new CX509Enrollment();
             objEnroll.InitializeFromRequest(objPkcs10);
             var base64request = objEnroll.CreateRequest(EncodingType.XCN_CRYPT_STRING_BASE64);
-
             return new CertificateRequest(base64request, privateKeyPEM);
         }
 
@@ -125,15 +128,15 @@ namespace Certify
             var cspInfo = new CCspInformations();
             cspInfo.AddAvailableCsps();
 
-            var privateKey = new CX509PrivateKey
-            {
-                Length = 2048,
-                KeySpec = X509KeySpec.XCN_AT_SIGNATURE,
-                KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES,
-                MachineContext = machineContext,
-                ExportPolicy = X509PrivateKeyExportFlags.XCN_NCRYPT_ALLOW_EXPORT_FLAG,
-                CspInformations = cspInfo
-            };
+            var privateKey = (IX509PrivateKey)Activator.CreateInstance(Type.GetTypeFromProgID("X509Enrollment.CX509PrivateKey"));
+
+            privateKey.Length = 2048;
+            privateKey.KeySpec = X509KeySpec.XCN_AT_SIGNATURE;
+            privateKey.KeyUsage = X509PrivateKeyUsageFlags.XCN_NCRYPT_ALLOW_ALL_USAGES;
+            privateKey.MachineContext = machineContext;
+            privateKey.ExportPolicy = X509PrivateKeyExportFlags.XCN_NCRYPT_ALLOW_EXPORT_FLAG;
+            privateKey.CspInformations = cspInfo;
+
             privateKey.Create();
 
             return privateKey;

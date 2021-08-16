@@ -7,7 +7,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using Certify.Lib;
 using Microsoft.Win32;
-using Certify.Lib;
 using System.Text;
 
 namespace Certify.Domain
